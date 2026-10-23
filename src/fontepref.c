@@ -1,3 +1,4 @@
+#include "handoff.h"
 // A fonte escolhida a mao, lembrada por titulo e por perfil. Ver a nota longa
 // em fontepref.h — em especial a ordem de casamento (bingeGroup declarado pelo
 // addon, depois provedor + trilha de audio), por que a chave nao pode ser a
@@ -1224,6 +1225,7 @@ int fontepref_escolher_manual(const char *id) {
 }
 
 int fontepref_escolher(const char *id) {
+  if (handoff_pending()) return -1; // Resolve using TV quality preferences.
   const FontePref *p = fontepref_do_titulo(id);
   return p ? escolherManual(p) : escolherAuto(id);
 }

@@ -54,6 +54,9 @@ typedef struct {
   size_t max_bytes, max_cabecalhos;
   int seguir;          /* 0 = devolver 3xx; 1 = ate 5 redirects */
   const char *ca_arquivo;
+  /* Exact SHA-256 SPKI pin for local handoff. HTTPS only, no redirects.
+   * libcurl checks this during TLS, before transmitting credentials. */
+  const char *tls_chave_pin;
   /* #290: 1 = servidor PESSOAL configurado pela pessoa (Jellyfin/Emby/Plex),
    * que costuma ter certificado autoassinado ou de rede local. O certificado
    * deixa de ser verificado SO enquanto o pedido estiver na MESMA origem

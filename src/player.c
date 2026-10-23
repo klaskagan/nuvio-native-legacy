@@ -1,3 +1,4 @@
+#include "handoff.h"
 // Tela de reproducao, no formato do NOSSO APP WEB.
 //
 // A referencia mudou: esta variante legacy segue o player do app web (o bloco
@@ -2192,6 +2193,7 @@ void player_definir_retomada_fonte(double segundos) {
     retomarFonteSeg = segundos;
 }
 void player_definir_fonte(const char *url) {
+  handoff_player_opened();
   if ((!aberto && !mini) || !url || !*url) return;
   fonteAcaoInvalidar();
   // A primeira fonte ainda pode aproveitar a legenda antecipada na espera.
@@ -7227,3 +7229,5 @@ float player_osd_brilho(void) {
                              agora > ultimoInput ? agora - ultimoInput : 0u,
                              tocando);
 }
+
+int player_handoff_ready(void) { return retomadaAplicada && video_pronto() && !player_carregando(); }

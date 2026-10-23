@@ -36,7 +36,8 @@ export JAVA_HOME="${JAVA_HOME:-$(ls -d "$HOME"/.local/jdks/jdk-17*/Contents/Home
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
 [ -x "$JAVA_HOME/bin/java" ] || { echo "android.sh: JDK 17 nao achado (JAVA_HOME)" >&2; exit 1; }
-for d in ndk/27.2.12479018 platforms/android-35 build-tools/35.0.0 cmake/3.22.1; do
+NDK_VERSION="${NUVIO_NDK_VERSION:-27.2.12479018}"
+for d in "ndk/$NDK_VERSION" platforms/android-35 build-tools/35.0.0 cmake/3.22.1; do
   [ -d "$ANDROID_HOME/$d" ] || { echo "android.sh: falta $ANDROID_HOME/$d (sdkmanager)" >&2; exit 1; }
 done
 
@@ -91,10 +92,10 @@ for abi in arm64-v8a armeabi-v7a; do
 done
 
 echo "[4/5] gradle"
-export ANDROID_NDK_HOME="${ANDROID_NDK_HOME:-$ANDROID_HOME/ndk/27.2.12479018}"
+export ANDROID_NDK_HOME="${ANDROID_NDK_HOME:-$ANDROID_HOME/ndk/$NDK_VERSION}"
 FFMPEG_AAR="$EST/media3-ffmpeg-16kb.aar"
 bash tools/android/ffmpeg-android.sh "$FFMPEG_AAR" arm64-v8a armeabi-v7a
-GR=(android/gradlew -p android --console=plain -Pnuvio.sdlSrc="$CACHE/src" -Pnuvio.estagio="$EST" -Pnuvio.ffmpegAar="$FFMPEG_AAR")
+GR=(android/gradlew -p android --console=plain -Pnuvio.ndkVersion="$NDK_VERSION" -Pnuvio.sdlSrc="$CACHE/src" -Pnuvio.estagio="$EST" -Pnuvio.ffmpegAar="$FFMPEG_AAR")
 [ "${NUVIO_ANDROID_OFFLINE:-0}" != 1 ] || GR+=(--offline)
 # Motor P2P embutido: pasta achada por tools/p2p-motor/pasta.sh (NUVIO_P2P_MOTOR,
 # ou a pasta padrao); configurada e incompleta = erro, nunca pacote sem motor calado.
@@ -109,8 +110,14 @@ fi
 # Nucleo EBML/NAL do mkv.c em Rust, ligado por padrao (dono aprovou em 14/10/2026);
 # NUVIO_RUST_MKVCORE=0 volta ao C para comparar.
 if [ "${NUVIO_RUST_MKVCORE:-1}" = 1 ]; then
-  NV_RUST_MKV_DIR="$EST/rust-mkvcore"
-  tools/rust-mkvcore.sh --android "$NV_RUST_MKV_DIR" >&2
+  NV_RUST_MKV_DIR="${NUVIO_RUST_MKVCORE_PREBUILT:-$EST/rust-mkvcore}"
+  if [ -n "${NUVIO_RUST_MKVCORE_PREBUILT:-}" ]; then
+    for abi in arm64-v8a armeabi-v7a; do
+      [ -f "$NV_RUST_MKV_DIR/$abi/libmkvcore.a" ] || { echo "Missing prebuilt Rust archive for $abi" >&2; exit 1; }
+    done
+  else
+    tools/rust-mkvcore.sh --android "$NV_RUST_MKV_DIR" >&2
+  fi
   GR+=(-Pnuvio.rustMkvcore="$NV_RUST_MKV_DIR")
 fi
 TAREFAS=()

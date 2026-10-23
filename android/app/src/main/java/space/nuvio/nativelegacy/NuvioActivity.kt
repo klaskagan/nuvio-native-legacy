@@ -267,10 +267,15 @@ class NuvioActivity : SDLActivity() {
 
     // LINK EXTERNO (docs/deeplink.md): o C valida; aqui so se limita o tamanho.
     private external fun nativeDeepLink(url: String)
+    private external fun nativeHandoff(payload: String)
 
     private fun entregarDeepLink(i: Intent?) {
         if (mBrokenLibraries || i?.action != Intent.ACTION_VIEW) return
         val url = i.dataString ?: return
+        if (url.startsWith("nuvio-legacy-handoff:") || url.startsWith("nuvio-legacy-handoff-debug:")) {
+            NativeHandoffLaunch.payload(url)?.let(::nativeHandoff)
+            return
+        }
         if (url.length <= 512) nativeDeepLink(url)
     }
 

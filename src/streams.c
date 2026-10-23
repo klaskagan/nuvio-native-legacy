@@ -1,3 +1,4 @@
+#include "handoff.h"
 #include "streams.h"
 #include "plrui.h"
 #include "ondever.h"
@@ -1335,6 +1336,7 @@ static long pontosDoAlvo(const Stream *s, const char *alvo) {
   }
 #endif
   p -= multasDeAlvo(s, alvo);
+  if (handoff_pending()) { char text[3072]; snprintf(text,sizeof text,"%s %s %s",s->rotulo,s->descricao,s->arquivo); p += handoff_edition_bonus(text); }
   return p;
 }
 static long pontos(const Stream *s) { return pontosDoAlvo(s, NULL); }

@@ -6912,6 +6912,7 @@ static const char *textoLeitura(int op) {
         snprintf(buf, sizeof buf, i18n("Em dia (%s)"), AJ_VERSAO);
         return buf;
       case ATUALIZACAO_BUSCA_ERRO: return i18n("Sem resposta");
+      case ATUALIZACAO_BUSCA_CUSTOM: return "Continue on TV build";
       default: return i18n("OK procura");
     }
   }
@@ -7843,6 +7844,7 @@ static const char *efeitoOpcao(int op) {
         snprintf(bufAt, sizeof bufAt, i18n("Você está na versão mais recente (%s)"), AJ_VERSAO);
         return bufAt;
       case ATUALIZACAO_BUSCA_ERRO: return i18n("Não deu para consultar agora");
+      case ATUALIZACAO_BUSCA_CUSTOM: return "Updates require a rebuilt Continue on TV package. Upstream installers are disabled in this custom build.";
       default: return NULL;
     }
   }
