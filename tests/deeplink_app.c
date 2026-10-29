@@ -1,3 +1,4 @@
+#include <stdio.h>
 // Harness for the real deeplinkAbrir body, extracted by deeplink.sh.
 #include "deeplink.h"
 #include <assert.h>

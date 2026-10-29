@@ -78,6 +78,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${handoffScheme}" />
                 <data android:scheme="nuvio-legacy" />
                 <data android:scheme="stremio" />
             </intent-filter>

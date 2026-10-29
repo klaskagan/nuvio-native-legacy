@@ -24,10 +24,11 @@ val (vx, vy, vz) = versao.split(".").map { it.toInt() }
 android {
     namespace = "space.nuvio.nativelegacy"
     compileSdk = 35
-    ndkVersion = "27.2.12479018"
+    ndkVersion = (findProperty("nuvio.ndkVersion") as String?) ?: "27.2.12479018"
 
     defaultConfig {
         applicationId = "space.nuvio.nativelegacy"
+        manifestPlaceholders["handoffScheme"] = "nuvio-legacy-handoff"
         minSdk = 24
         targetSdk = 35
         versionCode = vx * 10000 + vy * 100 + vz
@@ -81,7 +82,9 @@ android {
         debug {
             // Nunca substituir a instalacao de producao durante diagnosticos.
             applicationIdSuffix = ".strictdebug"
+            manifestPlaceholders["handoffScheme"] = "nuvio-legacy-handoff-debug"
             versionNameSuffix = "-strictdebug"
+            resValue("string", "app_name", "Nuvio Legacy TV")
         }
         release {
             isMinifyEnabled = false

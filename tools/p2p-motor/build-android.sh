@@ -13,7 +13,7 @@ cd "$(dirname "$0")/../.."
 . tools/p2p-motor/pasta.sh; nv_p2p_raiz
 W="${1:-${NV_P2P_RAIZ:-/Volumes/ExternalSSD/nuvio-p2p-motor}/android}"
 SDK="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
-NDK="$SDK/ndk/27.2.12479018"
+NDK="${ANDROID_NDK_HOME:-$SDK/ndk/27.2.12479018}"
 [ -d "$NDK" ] || { echo "build-android.sh: NDK ausente em $NDK" >&2; exit 1; }
 mkdir -p "$W"
 [ -d "$W/nuvio-engine/.git" ] || git clone -q https://github.com/NuvioMedia/nuvio-engine "$W/nuvio-engine"

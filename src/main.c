@@ -1,3 +1,4 @@
+#include "handoff.h"
 // Bootstrap: janela, contexto GL, loop e telemetria. Toda a UI vive nos modulos.
 #include "app_id.h"
 #include "arranque.h"
@@ -1027,6 +1028,8 @@ int main(int argc, char **argv) {
   // registro de todos os eventos SDL nao mostrava nada: a tecla nunca era
   // entregue, e o codigo que ela usa tambem nao era o que eu procurava.
   SDL_SetHint("SDL_WEBOS_ACCESS_POLICY_KEYS_BACK", "true");
+  // The SDL lifecycle logger includes authenticated launch parameters.
+  handoff_install_lifecycle();
 #ifdef NV_WEBOS
   // SDL_LOG_CATEGORY_SYSTEM PERMANECE no padrao (#205): o SDL-webOS loga o
   // lifecycleEvent(v2) inteiro no INFO, e o SAM inclui os parametros de
@@ -1716,6 +1719,8 @@ int main(int argc, char **argv) {
   NV_ETAPA("app_iniciar");
   arranque_etapa("app_iniciar");
   if (!app_iniciar(dirArte)) return 1;
+  handoff_ready();
+  if (argc > 1 && argv[1][0] == '{') handoff_launch(argv[1]);
   arranque_etapa("app_iniciar ok");
   NV_ETAPA("addons/catalogo");
   // Cor viva: a paleta da ultima cena volta ANTES do primeiro quadro, entao
@@ -2180,6 +2185,7 @@ int main(int argc, char **argv) {
     fBomb = NV_DT(t0);
     fUplN = tex_upl_n; fUplB = tex_upl_bytes;
     t0 = NV_T0();
+    handoff_tick();
     app_atualizar(dt, agora);
     // COR VIVA: UMA vez por quadro, antes do desenho. Consome o pedido que o
     // desenho do quadro anterior fez (corviva_definir) e anda a transicao; o
@@ -2267,6 +2273,7 @@ int main(int argc, char **argv) {
     txt_novo_quadro();
     ponteiro_quadro(agora);
     app_desenhar(agora);
+    handoff_draw();
     if (perftv_enabled) snprintf(perfScreen, sizeof perfScreen, "%s", perfTvScreen());
     // A abertura (#213) cobre os primeiros quadros, com a home montando por baixo.
     if (abertura_ativa()) {
