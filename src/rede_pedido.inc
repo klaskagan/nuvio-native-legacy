@@ -257,6 +257,8 @@ int rede_pedir(const RedePedido *p, RedeResposta *r) {
       !pedidoCabsValidos(p->cabecalhos, c.tetoCab)) {
     r->erro = REDE_ENTRADA; return 0;
   }
+  if (p->tls_chave_pin && (!tls || p->seguir || strlen(p->tls_chave_pin) != 52 ||
+      strncmp(p->tls_chave_pin, "sha256//", 8))) { r->erro = REDE_ENTRADA; return 0; }
   /* `origem` follows redirects; the personal-server origin is the first one. */
   memcpy(origemPessoal, origem, sizeof origemPessoal);
   rede_job_reter(p->job);
@@ -300,11 +302,12 @@ int rede_pedir(const RedePedido *p, RedeResposta *r) {
     PEDIDO_OPT(OPT_NOSIGNAL, 1L);
     { /* #290: servidor pessoal so na propria origem (ver tls_pessoal em rede.h). */
       char aqui[300];
-      int tlsAqui = 0, pessoal = p->tls_pessoal &&
-        pedidoOrigem(url, aqui, sizeof aqui, &tlsAqui) && tlsAqui && !strcmp(aqui, origemPessoal);
+      int tlsAqui = 0, pessoal = p->tls_chave_pin || (p->tls_pessoal &&
+        pedidoOrigem(url, aqui, sizeof aqui, &tlsAqui) && tlsAqui && !strcmp(aqui, origemPessoal));
       PEDIDO_OPT(OPT_SSL_VERIFYPEER, pessoal ? 0L : 1L);
       PEDIDO_OPT(OPT_SSL_VERIFYHOST, pessoal ? 0L : 2L);
     }
+    if (p->tls_chave_pin) PEDIDO_OPT(10230 /* CURLOPT_PINNEDPUBLICKEY */, p->tls_chave_pin);
     if (p->ca_arquivo || discordCa[0]) PEDIDO_OPT(OPT_CAINFO, p->ca_arquivo ? p->ca_arquivo : discordCa);
     PEDIDO_OPT(OPT_USERAGENT, "Nuvio/1.8");
     /* Media diagnostics measure the player's wire body, without transparent

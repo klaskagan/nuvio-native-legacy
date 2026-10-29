@@ -1,3 +1,7 @@
+#include "handoff.h"
+#ifdef NV_WEBOS
+#include "handoff_protocol.h"
+#endif
 // Roteador de telas.
 //
 // Antes disto o main.c decidia entre home e detalhe com um if. Com menu, busca,
@@ -1318,6 +1322,7 @@ static int retentarCanal(void) {
 }
 
 static int tocarFonteGuardada(void) {
+  if (handoff_pending()) return 0;
   Stream s;
   char alvo[64];
   Uint32 started = SDL_GetTicks();
@@ -3880,6 +3885,21 @@ static int spotAtalho(const SDL_Event *e) {
   return (e->key.keysym.scancode == NV_SCANCODE_YELLOW ||
           e->key.keysym.scancode == NV_SCANCODE_CH_DOWN) && tela != TELA_GUIA;
 }
+/* Reuse only the saved, unlocked profile requested by an already trusted
+ * desktop. The receiver calls this on the UI thread; ordinary app startup and
+ * a different/PIN-protected profile keep the existing chooser. */
+int app_handoff_restore_profile(const char *owner, int profile) {
+  if (!owner || !owner[0] || !sessao_logada() ||
+      strcmp(perfis_dono(), owner) || perfis_ativo() != profile ||
+      tela != TELA_ESCOLHA_PERFIL || !perfis_pode_dispensar()) return 0;
+  perfis_manter_ativo();
+  perfilsel_continuar_ativo();
+  sync_iniciar();
+  tela = TELA_HOME;
+  menu_definir_destino(MENU_INICIO);
+  return 1;
+}
+
 static int spotPode(void) {
   return tela != TELA_LOGIN && tela != TELA_ESCOLHA_PERFIL && !player_aberto() &&
          !spainel_aberto() && !guia_overlay_aberta();
@@ -3923,6 +3943,15 @@ static void deeplinkAbrir(const DeepLink *d) {
   else desc_pedir_titulo_tmdb(d->tmdb, d->serie ? "tv" : "movie");
 }
 
+static char handoffTitle[64];
+static int handoffSeason, handoffEpisode;
+void app_handoff_start(const char *content,int season,int episode) {
+ DeepLink d={0};char url[160];snprintf(url,sizeof url,"nuvio-legacy://play/%s/%s",episode>0?"series":"movie",content);
+ if(!deeplink_parse(url,&d))return;
+ d.temporada=season;d.episodio=episode;
+ snprintf(handoffTitle,sizeof handoffTitle,"%s",content);handoffSeason=season;handoffEpisode=episode;
+ deeplinkAbrir(&d);
+}
 static void spotAbrir(int voz) {
   static Uint32 ultimo;
   Uint32 t = SDL_GetTicks();
@@ -4237,6 +4266,7 @@ void app_evento(const SDL_Event *e) {
       musicaui_evento(e); return;
     }
   }
+  if (handoff_event(e)) return;
   static int backRetido;
   static Uint32 backUltimo;
   // Guard before any sheet/panel consumes Back. Flagged repeats are always held;
@@ -5420,6 +5450,22 @@ void app_atualizar(float dt, Uint32 agora) {
       ilhacart_dispensar(qual);
     } else if (o == ILHA_PEDIU_DEPOIS) ilhacart_adiar(qual);
   }
+  if(handoffTitle[0]) {
+   if(!handoff_pending()||player_aberto())handoffTitle[0]=0;
+   else if(detail_aberto()) {
+    const CatItem *ci=cat_item(detail_indice());
+    if(ci&&
+#ifdef NV_WEBOS
+       handoff_content_matches(handoffTitle,handoffEpisode>0,ci->imdb,ci->tmdb,!strcmp(ci->tipo,"series"))
+#else
+       !strcmp(ci->imdb,handoffTitle)
+#endif
+    ) {
+     cwTocarT=handoffSeason;cwTocarE=handoffEpisode;
+     detail_pedir_reproduzir();handoffTitle[0]=0;
+    }
+   }
+  }
   { DeepLink dl;
     if (tela != TELA_LOGIN && tela != TELA_ESCOLHA_PERFIL &&
         !desc_titulo_buscando() && deeplink_pegar(&dl)) deeplinkAbrir(&dl); }
@@ -5900,6 +5946,7 @@ void app_atualizar(float dt, Uint32 agora) {
         cwTocarT = cwTocarE = 0;
       }
       if (doInicio) player_do_inicio();
+      handoff_player_opened();
       // O episodio so fica definitivo DEPOIS de abrir o player. Refaça sempre
       // o pedido de legenda nesse ponto; a busca de prefetch pode ter comecado
       // no episodio anteriormente focado e o worker agora troca para o pedido

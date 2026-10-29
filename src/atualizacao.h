@@ -22,7 +22,7 @@ void atualizacao_retomou(void);
 void atualizacao_procurar_agora(void);
 // O que a ultima consulta respondeu, para a linha dos Ajustes.
 enum { ATUALIZACAO_BUSCA_NADA = 0, ATUALIZACAO_BUSCA_PROCURANDO,
-       ATUALIZACAO_BUSCA_EM_DIA, ATUALIZACAO_BUSCA_NOVA, ATUALIZACAO_BUSCA_ERRO };
+       ATUALIZACAO_BUSCA_EM_DIA, ATUALIZACAO_BUSCA_NOVA, ATUALIZACAO_BUSCA_ERRO, ATUALIZACAO_BUSCA_CUSTOM };
 int  atualizacao_busca(void);
 // 1 (uma vez) quando a consulta pedida por atualizacao_procurar_agora achou
 // versao nova: quem pediu abre o cartao.

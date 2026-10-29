@@ -19,6 +19,7 @@
 #include "horafmt.h"
 #include "app_id.h"
 #include "atualizacao.h"
+#include "handoff.h"
 #include "ilha.h"
 #include "dados.h"
 #include "rede.h"
@@ -639,7 +640,7 @@ static int fioConsulta(void *arg) {
 // Sem o Homebrew Channel instalado nao ha caminho nenhum, e o cartao volta a
 // ser so aviso (ver podeInstalar).
 static int fioInstalar(void *arg) {
-#ifdef NV_DTS_DEBUG
+#if defined(NV_DTS_DEBUG) || NV_HANDOFF_LOCAL_BUILD
   /* Production release IPKs carry the production ID; never install them from
    * an isolated diagnostic app, including through a stale update card. */
   (void)arg; return 0;
@@ -735,7 +736,7 @@ static int temInstalador(void) {
 }
 
 static int podeInstalar(void) {
-#ifdef NV_DTS_DEBUG
+#if defined(NV_DTS_DEBUG) || NV_HANDOFF_LOCAL_BUILD
   return 0;
 #endif
   return AT_INSTALA && ipkUrl[0] && estado == AT_PARADO && temInstalador();
@@ -832,6 +833,9 @@ static void apkFalhou(void) {
 }
 
 static int fioInstalarApk(void *arg) {
+#if NV_HANDOFF_LOCAL_BUILD
+  (void)arg; return 0; /* Stock APKs do not carry our receiver overlay. */
+#endif
   char dir[600] = "", nome[96], rel[128], arq[600] = "", hex[65] = "", ver[32], hash[80];
   char *buf = NULL;
   long n = 0;
@@ -987,7 +991,7 @@ static int podeReconsultar(void) {
 }
 
 void atualizacao_verificar(void) {
-#ifdef NV_DTS_DEBUG
+#if defined(NV_DTS_DEBUG) || NV_HANDOFF_LOCAL_BUILD
   return; /* Debug IPKs are installed explicitly, outside production updates. */
 #endif
   static long ultChamada;
@@ -1011,7 +1015,7 @@ void atualizacao_verificar(void) {
 }
 
 void atualizacao_procurar_agora(void) {
-#ifdef NV_DTS_DEBUG
+#if defined(NV_DTS_DEBUG) || NV_HANDOFF_LOCAL_BUILD
   return;
 #endif
   if (!mtx) mtx = SDL_CreateMutex();
@@ -1024,6 +1028,9 @@ void atualizacao_procurar_agora(void) {
 }
 
 int atualizacao_busca(void) {
+#if NV_HANDOFF_LOCAL_BUILD
+  return ATUALIZACAO_BUSCA_CUSTOM;
+#endif
   int b;
   if (!mtx) return ATUALIZACAO_BUSCA_NADA;
   SDL_LockMutex(mtx); b = busca; SDL_UnlockMutex(mtx);
